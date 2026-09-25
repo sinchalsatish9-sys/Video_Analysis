@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vision Pipeline Test Harness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pitch:#0F2818;
+    --panel:#15311F;
+    --panel-2:#1B3A27;
+    --cream:#EDE6D6;
+    --cream-dim:#B9B29F;
+    --ball:#A8332B;
+    --ball-bright:#C7453B;
+    --amber:#D9A441;
+    --line:rgba(237,230,214,0.14);
+    --good:#7FA86B;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--pitch); color:var(--cream);
+    font-family:'Inter',sans-serif; line-height:1.5;
+    background-image:
+      linear-gradient(180deg, rgba(0,0,0,0.15), transparent 200px),
+      repeating-linear-gradient(90deg, rgba(237,230,214,0.015) 0 2px, transparent 2px 140px);
+  }
+  header{
+    padding:28px 32px 22px; border-bottom:1px solid var(--line);
+    display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:10px;
+  }
+  header .brand{display:flex; align-items:baseline; gap:12px;}
+  h1{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:22px;
+    margin:0; letter-spacing:0.2px;
+  }
+  .tag{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--amber);
+    border:1px solid rgba(217,164,65,0.4); padding:3px 8px; border-radius:3px; letter-spacing:0.5px;
+  }
+  .subtitle{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--cream-dim);}
+  main{max-width:1180px; margin:0 auto; padding:28px 32px 80px;}
+  .panel{
+    background:var(--panel); border:1px solid var(--line); border-radius:6px;
+    padding:22px 24px; margin-bottom:22px;
+  }
+  .panel-title{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:14px;
+    text-transform:uppercase; letter-spacing:1px; color:var(--amber); margin:0 0 16px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .panel-title::before{content:''; width:8px; height:8px; background:var(--ball); display:inline-block; border-radius:1px;}
+  .grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:16px;}
+  label{display:block; font-size:12px; color:var(--cream-dim); margin-bottom:6px; font-family:'IBM Plex Mono',monospace;}
+  input[type=text], input[type=password], input[type=file], select{
+    width:100%; background:var(--pitch); border:1px solid var(--line); color:var(--cream);
+    padding:9px 10px; border-radius:4px; font-family:'IBM Plex Mono',monospace; font-size:13px;
+  }
+  input[type=range]{width:100%; accent-color:var(--amber);}
+  .radio-row{display:flex; gap:10px;}
+  .radio-btn{
+    flex:1; text-align:center; padding:10px; border:1px solid var(--line); border-radius:4px;
+    cursor:pointer; font-family:'Space Grotesk',sans-serif; font-weight:500; font-size:13px;
+    color:var(--cream-dim); transition:all .15s;
+  }
+  .radio-btn.active{border-color:var(--amber); color:var(--amber); background:rgba(217,164,65,0.08);}
+  .row-val{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--amber); margin-top:4px;}
+  button.run{
+    margin-top:20px; width:100%; padding:14px; background:var(--ball); color:var(--cream);
+    border:none; border-radius:4px; font-family:'Space Grotesk',sans-serif; font-weight:700;
+    font-size:14px; letter-spacing:0.5px; cursor:pointer; transition:background .15s;
+  }
+  button.run:hover{background:var(--ball-bright);}
+  button.run:disabled{background:#3a3a3a; color:#888; cursor:not-allowed;}
+  .hint{font-size:11px; color:var(--cream-dim); margin-top:8px; font-family:'IBM Plex Mono',monospace;}
+  #log{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--cream-dim);
+    background:var(--pitch); border:1px solid var(--line); border-radius:4px; padding:12px 14px;
+    max-height:160px; overflow-y:auto; white-space:pre-wrap;
+  }
+  #log .ok{color:var(--good);} #log .err{color:var(--ball-bright);}
+  #videoPreview{display:none;}
+  .kf-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:14px;}
+  .kf-card{
+    background:var(--panel-2); border:1px solid var(--line); border-radius:5px; overflow:hidden;
+    border-top:2px solid var(--amber);
+  }
+  .kf-card canvas{width:100%; display:block; background:#000;}
+  .kf-meta{
+    padding:7px 9px; font-family:'IBM Plex Mono',monospace; font-size:11px;
+    display:flex; justify-content:space-between; color:var(--cream-dim);
+  }
+  .kf-meta b{color:var(--amber); font-weight:500;}
+  .fb-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(280px,1fr)); gap:14px;}
+  .fb-card{background:var(--panel-2); border:1px solid var(--line); border-radius:5px; padding:16px 18px;}
+  .fb-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
+  .fb-name{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:14px;}
+  .fb-score{
+    font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:500; color:var(--pitch);
+    background:var(--amber); padding:2px 9px; border-radius:20px;
+  }
+  .fb-bar{height:4px; background:rgba(237,230,214,0.1); border-radius:2px; margin-bottom:10px; overflow:hidden;}
+  .fb-bar-fill{height:100%; background:var(--good);}
+  .fb-text{font-size:13px; color:var(--cream-dim); margin-bottom:10px;}
+  .fb-drill{
+    font-size:12px; border-top:1px dashed var(--line); padding-top:10px;
+    font-family:'IBM Plex Mono',monospace; color:var(--amber);
+  }
+  .fb-drill span{color:var(--cream-dim); font-family:'Inter',sans-serif;}
+  .empty{color:var(--cream-dim); font-size:13px; font-family:'IBM Plex Mono',monospace;}
+  .stat-card{background:var(--panel-2); border:1px solid var(--line); border-radius:5px; padding:14px 16px;}
+  .stat-label{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--cream-dim); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;}
+  .stat-value{font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:20px; color:var(--amber);}
+  .stat-sub{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--cream-dim); margin-top:3px;}
+  #summaryBox{font-size:14px; color:var(--cream); line-height:1.6; font-family:'Inter',sans-serif;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>Vision Pipeline Test Harness</h1>
+    <span class="tag">INTERNAL / VERIFICATION</span>
+  </div>
+  <div class="subtitle">frame extraction &rarr; pose overlay &rarr; Gemini 2.5 feedback</div>
+</header>
+
+<main>
+
+  <div class="panel">
+    <p class="panel-title">Input</p>
+    <div class="grid">
+      <div>
+        <label>Shot type</label>
+        <div class="radio-row">
+          <div class="radio-btn active" data-type="batting">Batting</div>
+          <div class="radio-btn" data-type="bowling">Bowling</div>
+        </div>
+      </div>
+      <div>
+        <label>Video file</label>
+        <input type="file" id="videoFile" accept="video/*">
+      </div>
+      <div>
+        <label>Gemini model</label>
+        <select id="modelSelect">
+          <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+          <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+        </select>
+      </div>
+      <div>
+        <label>Sample rate <span class="row-val" id="fpsVal">1.2 fps</span></label>
+        <input type="range" id="fpsRange" min="0.5" max="2" step="0.1" value="1.2">
+      </div>
+    </div>
+    <div class="grid" style="margin-top:16px;">
+      <div style="grid-column: span 2;">
+        <label>Gemini API key</label>
+        <input type="password" id="apiKey" placeholder="AIza...">
+        <p class="hint">Used only in this browser tab to call generativelanguage.googleapis.com directly. Never sent anywhere else, not stored. This client-side pattern is for local verification only — do not ship an exposed key in production.</p>
+      </div>
+    </div>
+    <button class="run" id="runBtn">Run analysis</button>
+    <video id="videoPreview" playsinline muted></video>
+  </div>
+
+  <div class="panel">
+    <p class="panel-title">Log</p>
+    <div id="log">Waiting for a video…</div>
+  </div>
+
+  <div class="panel">
+    <p class="panel-title">Run stats</p>
+    <div class="grid" id="statsGrid">
+      <p class="empty">No run yet.</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <p class="panel-title">Overall summary</p>
+    <div id="summaryBox" class="empty">No summary yet.</div>
+  </div>
+
+  <div class="panel">
+    <p class="panel-title">Picked keyframes (skeleton overlay)</p>
+    <div class="kf-grid" id="kfGrid"><p class="empty">No frames yet — run an analysis above.</p></div>
+  </div>
+
+  <div class="panel">
+    <p class="panel-title">Gemini feedback</p>
+    <div class="fb-grid" id="fbGrid"><p class="empty">No feedback yet.</p></div>
+  </div>
+
+</main>
+
+<script type="module">
+import { PoseLandmarker, FilesetResolver, DrawingUtils } from "https://esm.sh/@mediapipe/tasks-vision@0.10.0";
+
+const CRITERIA = {
+  batting: ["Bat speed","Grip","Stance and setup","Back lift","Front foot movement","Back foot movement","Weight transfer","Head position"],
+  bowling: ["Grip","Runup","Non bowling arm","Bowling arm","Backfoot landing","Front foot landing","Follow Through"]
+};
+
+// Approximate USD per 1M tokens. Google updates these — treat as estimates, not billing truth.
+// Source: Gemini API pricing pages, checked July 2026. Re-verify before trusting for budgeting.
+const GEMINI_PRICING = {
+  "gemini-2.5-flash": { input: 0.30, output: 2.50 },
+  "gemini-2.5-pro":   { input: 1.25, output: 10.00 }
+};
+
+let shotType = "batting";
+document.querySelectorAll(".radio-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".radio-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    shotType = btn.dataset.type;
+  });
+});
+
+const fpsRange = document.getElementById("fpsRange");
+const fpsVal = document.getElementById("fpsVal");
+fpsRange.addEventListener("input", () => fpsVal.textContent = `${fpsRange.value} fps`);
+
+const logEl = document.getElementById("log");
+function log(msg, cls) {
+  const line = document.createElement("div");
+  if (cls) line.className = cls;
+  line.textContent = `${new Date().toLocaleTimeString()}  ${msg}`;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+let poseLandmarker = null;
+async function initPose() {
+  if (poseLandmarker) return poseLandmarker;
+  log("Loading MediaPipe Pose Landmarker…");
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
+  );
+  poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+      delegate: "GPU"
+    },
+    runningMode: "IMAGE",
+    numPoses: 1
+  });
+  log("Pose model ready.", "ok");
+  return poseLandmarker;
+}
+
+const videoEl = document.getElementById("videoPreview");
+
+function seekTo(time) {
+  return new Promise(resolve => {
+    const onSeeked = () => { videoEl.removeEventListener("seeked", onSeeked); resolve(); };
+    videoEl.addEventListener("seeked", onSeeked);
+    videoEl.currentTime = time;
+  });
+}
+
+async function extractFrames(fps) {
+  const duration = videoEl.duration;
+  const interval = 1 / fps;
+  const canvas = document.createElement("canvas");
+  canvas.width = videoEl.videoWidth;
+  canvas.height = videoEl.videoHeight;
+  const ctx = canvas.getContext("2d");
+  const frames = [];
+
+  for (let t = 0; t < duration; t += interval) {
+    await seekTo(t);
+    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+    const result = poseLandmarker.detect(canvas);
+    const landmarks = result.landmarks && result.landmarks[0] ? result.landmarks[0] : null;
+    frames.push({
+      t,
+      imageData: ctx.getImageData(0, 0, canvas.width, canvas.height),
+      landmarks
+    });
+  }
+  return frames;
+}
+
+// motion score per frame = sum of displacement of wrist/elbow landmarks vs previous frame
+function scoreMotion(frames) {
+  const trackedIdx = [11,12,13,14,15,16]; // shoulders, elbows, wrists (COCO/BlazePose indices)
+  return frames.map((f, i) => {
+    if (i === 0 || !f.landmarks || !frames[i-1].landmarks) return 0;
+    let sum = 0;
+    for (const idx of trackedIdx) {
+      const a = f.landmarks[idx], b = frames[i-1].landmarks[idx];
+      if (!a || !b) continue;
+      sum += Math.hypot(a.x - b.x, a.y - b.y);
+    }
+    return sum;
+  });
+}
+
+function pickKeyframes(frames, minCount = 8, maxCount = 15) {
+  const scores = scoreMotion(frames);
+  const withIdx = scores.map((s, i) => ({ i, s })).filter(x => frames[x.i].landmarks);
+  withIdx.sort((a, b) => b.s - a.s);
+  let picked = withIdx.slice(0, maxCount).map(x => x.i);
+  if (picked.length < minCount) {
+    // pad with evenly spaced frames that have landmarks
+    const valid = frames.map((f,i)=>i).filter(i => frames[i].landmarks);
+    const step = Math.max(1, Math.floor(valid.length / minCount));
+    for (let i = 0; i < valid.length && picked.length < minCount; i += step) {
+      if (!picked.includes(valid[i])) picked.push(valid[i]);
+    }
+  }
+  picked.sort((a,b) => a - b);
+  return picked.map(i => frames[i]);
+}
+
+function drawSkeletonThumb(frame, label) {
+  const canvas = document.createElement("canvas");
+  canvas.width = frame.imageData.width;
+  canvas.height = frame.imageData.height;
+  const ctx = canvas.getContext("2d");
+  ctx.putImageData(frame.imageData, 0, 0);
+  if (frame.landmarks) {
+    const drawer = new DrawingUtils(ctx);
+    drawer.drawConnectors(frame.landmarks, PoseLandmarker.POSE_CONNECTIONS, { color: "#D9A441", lineWidth: 3 });
+    drawer.drawLandmarks(frame.landmarks, { color: "#A8332B", radius: 3 });
+  }
+  // Burn a readable label onto the frame itself (frame index + timestamp + pose-detected flag)
+  // so both the human reviewer and Gemini can unambiguously reference "frame 3" etc.
+  const text = label || `t=${frame.t.toFixed(2)}s${frame.landmarks ? "" : "  [NO POSE DETECTED]"}`;
+  const fontSize = Math.max(16, Math.round(canvas.width / 28));
+  ctx.font = `bold ${fontSize}px monospace`;
+  const padding = 6;
+  const textWidth = ctx.measureText(text).width;
+  ctx.fillStyle = "rgba(15,40,24,0.75)";
+  ctx.fillRect(0, 0, textWidth + padding * 2, fontSize + padding * 2);
+  ctx.fillStyle = frame.landmarks ? "#D9A441" : "#C7453B";
+  ctx.textBaseline = "top";
+  ctx.fillText(text, padding, padding);
+  return canvas;
+}
+
+function renderKeyframes(keyframes) {
+  const grid = document.getElementById("kfGrid");
+  grid.innerHTML = "";
+  keyframes.forEach((f, i) => {
+    const card = document.createElement("div");
+    card.className = "kf-card";
+    const canvas = drawSkeletonThumb(f, `#${i+1}  t=${f.t.toFixed(2)}s${f.landmarks ? "" : "  [NO POSE]"}`);
+    card.appendChild(canvas);
+    const meta = document.createElement("div");
+    meta.className = "kf-meta";
+    meta.innerHTML = `<span>Frame ${i+1}</span><b>${f.t.toFixed(2)}s</b>`;
+    card.appendChild(meta);
+    grid.appendChild(card);
+  });
+}
+
+function landmarksSummary(frame) {
+  if (!frame.landmarks) return null;
+  const names = ["nose","l_shoulder","r_shoulder","l_elbow","r_elbow","l_wrist","r_wrist","l_hip","r_hip","l_knee","r_knee","l_ankle","r_ankle"];
+  const idx = [0,11,12,13,14,15,16,23,24,25,26,27,28];
+  const out = {};
+  idx.forEach((li, n) => {
+    const p = frame.landmarks[li];
+    if (p) out[names[n]] = [Math.round(p.x*1000)/1000, Math.round(p.y*1000)/1000];
+  });
+  return out;
+}
+
+async function callGemini(apiKey, model, keyframes, type) {
+  const criteria = CRITERIA[type];
+  const maxImages = 10;
+  const sampled = keyframes.length > maxImages
+    ? keyframes.filter((_, i) => i % Math.ceil(keyframes.length / maxImages) === 0).slice(0, maxImages)
+    : keyframes;
+
+  const parts = [];
+  parts.push({
+    text:
+`You are a cricket coaching analyst. You are given ${sampled.length} sequential keyframes from a single ${type} action, each with an image and its detected body-landmark positions (normalized 0-1, y grows downward). Evaluate the action strictly against these technical parameters: ${criteria.join(", ")}.
+
+First write one overall summary (3-5 sentences) of the ${type} action as a whole — the main strengths, the main issues, and the single highest-priority fix.
+
+Then for each parameter return: a score 1-10, concise specific feedback grounded in what you see across the frames, and one targeted practice drill to improve it.
+
+Landmark data per frame (index matches image order):
+${JSON.stringify(sampled.map((f, i) => ({ frame: i, t: f.t, landmarks: landmarksSummary(f) })))}`
+  });
+
+  for (let i = 0; i < sampled.length; i++) {
+    const f = sampled[i];
+    const canvas = drawSkeletonThumb(f, `#${i+1}  t=${f.t.toFixed(2)}s`);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+    parts.push({ inline_data: { mime_type: "image/jpeg", data: dataUrl.split(",")[1] } });
+  }
+
+  const body = {
+    contents: [{ role: "user", parts }],
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: "OBJECT",
+        properties: {
+          summary: { type: "STRING" },
+          criteria: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              properties: {
+                criterion: { type: "STRING" },
+                score: { type: "INTEGER" },
+                feedback: { type: "STRING" },
+                drill: { type: "STRING" }
+              },
+              required: ["criterion","score","feedback","drill"]
+            }
+          }
+        },
+        required: ["summary","criteria"]
+      }
+    }
+  };
+
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Gemini API error ${res.status}: ${errText.slice(0,300)}`);
+  }
+  const json = await res.json();
+  const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error("No text in Gemini response: " + JSON.stringify(json).slice(0,300));
+  const parsed = JSON.parse(text);
+  const usage = json.usageMetadata || {};
+  return { summary: parsed.summary, criteria: parsed.criteria, usage };
+}
+
+function estimateCost(model, usage) {
+  const rate = GEMINI_PRICING[model];
+  if (!rate || !usage) return null;
+  const inputTokens = usage.promptTokenCount || 0;
+  const outputTokens = usage.candidatesTokenCount || 0;
+  const cost = (inputTokens / 1e6) * rate.input + (outputTokens / 1e6) * rate.output;
+  return { cost, inputTokens, outputTokens };
+}
+
+function renderStats({ framesExtracted, framesWithPose, keyframesSelected, processingSeconds, geminiSeconds, model, usage }) {
+  const grid = document.getElementById("statsGrid");
+  const costInfo = estimateCost(model, usage);
+  const cards = [
+    { label: "Frames extracted", value: framesExtracted, sub: `${framesWithPose} with detected pose` },
+    { label: "Keyframes selected", value: keyframesSelected, sub: `sent to Gemini` },
+    { label: "Pose processing time", value: `${processingSeconds.toFixed(1)}s`, sub: "wall-clock, this browser tab — not a true CPU-seconds metric" },
+    { label: "Gemini call time", value: `${geminiSeconds.toFixed(1)}s`, sub: model },
+    costInfo
+      ? { label: "Est. Gemini cost", value: `$${costInfo.cost.toFixed(4)}`, sub: `${costInfo.inputTokens} in / ${costInfo.outputTokens} out tokens (est. rate)` }
+      : { label: "Est. Gemini cost", value: "n/a", sub: "no usage data returned" }
+  ];
+  grid.innerHTML = "";
+  cards.forEach(c => {
+    const div = document.createElement("div");
+    div.className = "stat-card";
+    div.innerHTML = `<div class="stat-label">${c.label}</div><div class="stat-value">${c.value}</div><div class="stat-sub">${c.sub}</div>`;
+    grid.appendChild(div);
+  });
+}
+
+function renderSummary(summary) {
+  document.getElementById("summaryBox").textContent = summary;
+  document.getElementById("summaryBox").classList.remove("empty");
+}
+
+function renderFeedback(results) {
+  const grid = document.getElementById("fbGrid");
+  grid.innerHTML = "";
+  results.forEach(r => {
+    const card = document.createElement("div");
+    card.className = "fb-card";
+    const pct = Math.max(0, Math.min(100, (r.score/10)*100));
+    card.innerHTML = `
+      <div class="fb-head"><span class="fb-name">${r.criterion}</span><span class="fb-score">${r.score}/10</span></div>
+      <div class="fb-bar"><div class="fb-bar-fill" style="width:${pct}%"></div></div>
+      <div class="fb-text">${r.feedback}</div>
+      <div class="fb-drill"><span>Drill:</span> ${r.drill}</div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+document.getElementById("runBtn").addEventListener("click", async () => {
+  const fileInput = document.getElementById("videoFile");
+  const apiKey = document.getElementById("apiKey").value.trim();
+  const model = document.getElementById("modelSelect").value;
+  const fps = parseFloat(fpsRange.value);
+  const runBtn = document.getElementById("runBtn");
+
+  if (!fileInput.files[0]) { log("Pick a video file first.", "err"); return; }
+  if (!apiKey) { log("Enter a Gemini API key first.", "err"); return; }
+
+  runBtn.disabled = true;
+  document.getElementById("kfGrid").innerHTML = "";
+  document.getElementById("fbGrid").innerHTML = "";
+  document.getElementById("statsGrid").innerHTML = '<p class="empty">Running…</p>';
+  document.getElementById("summaryBox").textContent = "Running…";
+  document.getElementById("summaryBox").classList.add("empty");
+  logEl.innerHTML = "";
+
+  try {
+    await initPose();
+
+    log("Loading video…");
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error("Video metadata never loaded (10s timeout). The file may be an unsupported codec/container for this browser, or corrupted — try converting to H.264 mp4."));
+      }, 10000);
+      const onLoaded = () => {
+        clearTimeout(timeout);
+        videoEl.removeEventListener("error", onError);
+        resolve();
+      };
+      const onError = () => {
+        clearTimeout(timeout);
+        videoEl.removeEventListener("loadedmetadata", onLoaded);
+        const err = videoEl.error;
+        reject(new Error(`Video failed to load: ${err ? err.message || `code ${err.code}` : "unknown error"}`));
+      };
+      videoEl.addEventListener("loadedmetadata", onLoaded, { once: true });
+      videoEl.addEventListener("error", onError, { once: true });
+      videoEl.preload = "auto";
+      videoEl.src = URL.createObjectURL(fileInput.files[0]);
+      videoEl.load();
+    });
+    log(`Video loaded: ${videoEl.duration.toFixed(1)}s, ${videoEl.videoWidth}x${videoEl.videoHeight}`, "ok");
+
+    log(`Extracting frames at ${fps} fps and running pose detection…`);
+    const extractStart = performance.now();
+    const frames = await extractFrames(fps);
+    const extractSeconds = (performance.now() - extractStart) / 1000;
+    const framesWithPose = frames.filter(f => f.landmarks).length;
+    log(`Extracted ${frames.length} frames (${framesWithPose} with a detected pose) in ${extractSeconds.toFixed(1)}s.`, "ok");
+
+    const keyframes = pickKeyframes(frames);
+    log(`Picked ${keyframes.length} keyframes by motion energy.`, "ok");
+    renderKeyframes(keyframes);
+
+    log(`Sending keyframes + ${shotType} criteria to ${model}…`);
+    const geminiStart = performance.now();
+    const results = await callGemini(apiKey, model, keyframes, shotType);
+    const geminiSeconds = (performance.now() - geminiStart) / 1000;
+    log(`Received feedback for ${results.criteria.length} criteria in ${geminiSeconds.toFixed(1)}s.`, "ok");
+    renderSummary(results.summary);
+    renderFeedback(results.criteria);
+    renderStats({
+      framesExtracted: frames.length,
+      framesWithPose,
+      keyframesSelected: keyframes.length,
+      processingSeconds: extractSeconds,
+      geminiSeconds,
+      model,
+      usage: results.usage
+    });
+
+  } catch (err) {
+    console.error(err);
+    log(err.message, "err");
+  } finally {
+    runBtn.disabled = false;
+  }
+});
+</script>
+
+</body>
+</html>
